@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="AlbumDeckData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/album_deck_data.gd" id="1_album"]
+
+[resource]
+script = ExtResource("1_album")
+id = "basic_mixtape"
+display_name = "Basic Mixtape"
+description = "Standard 52-track starting deck."
+deck_effect_id = ""
+track_names = {
+"1": "Opening Signal",
+"2": "Night Drive",
+"3": "Rhythm Theory",
+"4": "Echo Chamber",
+"5": "Velvet Pulse",
+"6": "Neon Drift",
+"7": "Main Stage",
+"8": "Cross Current",
+"9": "After Hours",
+"10": "Spotlight Burn",
+"11": "Final Drop",
+"12": "Last Encore",
+"13": "Closing Time"
+}
+suit_subtitles = {
+"hearts": "Heart Mix",
+"diamonds": "Diamond Mix",
+"clubs": "Club Mix",
+"spades": "Night Mix"
+}

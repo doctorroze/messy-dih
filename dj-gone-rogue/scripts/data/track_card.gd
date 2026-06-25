@@ -6,6 +6,7 @@ class_name TrackCard
 @export_enum("hearts", "diamonds", "clubs", "spades") var suit := "hearts"
 @export var album_deck_id := ""
 @export var display_track_name := ""
+@export var display_suit_subtitle := ""
 @export var enhancements: Array[String] = []
 @export var temporary_modifiers: Array[String] = []
 @export var edition_flags := {}
@@ -16,13 +17,15 @@ func setup(
 	card_rank: int,
 	card_suit: String,
 	card_album_deck_id: String,
-	card_display_track_name: String
+	card_display_track_name: String,
+	card_display_suit_subtitle: String = ""
 ) -> TrackCard:
 	unique_id = card_id
 	rank = clampi(card_rank, Config.RANK_MIN, Config.RANK_MAX)
 	suit = card_suit
 	album_deck_id = card_album_deck_id
 	display_track_name = card_display_track_name
+	display_suit_subtitle = card_display_suit_subtitle
 	return self
 
 
@@ -55,6 +58,23 @@ func has_temporary_modifier(modifier_id: String) -> bool:
 	return temporary_modifiers.has(modifier_id)
 
 
+func add_enhancement(enhancement_id: String) -> void:
+	if enhancement_id.strip_edges().is_empty():
+		return
+	if not enhancements.has(enhancement_id):
+		enhancements.append(enhancement_id)
+
+
+func set_identity_from(other: TrackCard) -> void:
+	if other == null:
+		return
+	rank = other.rank
+	suit = other.suit
+	album_deck_id = other.album_deck_id
+	display_track_name = other.display_track_name
+	display_suit_subtitle = other.display_suit_subtitle
+
+
 func to_debug_dictionary() -> Dictionary:
 	return {
 		"unique_id": unique_id,
@@ -62,6 +82,7 @@ func to_debug_dictionary() -> Dictionary:
 		"suit": suit,
 		"album_deck_id": album_deck_id,
 		"display_track_name": display_track_name,
+		"display_suit_subtitle": display_suit_subtitle,
 		"enhancements": enhancements.duplicate(),
 		"temporary_modifiers": temporary_modifiers.duplicate(),
 		"edition_flags": edition_flags.duplicate(true),

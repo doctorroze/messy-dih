@@ -6,6 +6,7 @@ signal stop_started(stop_snapshot: Dictionary)
 signal money_changed(money: int)
 signal inventories_changed()
 signal piles_changed()
+signal scoring_breakdown_changed(breakdown: Dictionary)
 signal run_won()
 signal run_lost(reason: String)
 
@@ -30,6 +31,9 @@ var discards_remaining := 0
 var target_hype := 0
 var current_hype := 0
 var previous_hand_types_this_stop: Array[String] = []
+var last_scoring_breakdown := {}
+var last_result_message := ""
+var discards_used_this_stop := 0
 
 var rng_seed_string := ""
 var album_deck_id := ""
@@ -63,13 +67,17 @@ func reset_run(seed_value: String = "", starter_album_deck_id: String = "") -> v
 	target_hype = Config.get_target_hype(current_leg, current_stop_type)
 	current_hype = 0
 	previous_hand_types_this_stop.clear()
+	last_scoring_breakdown.clear()
+	last_result_message = ""
+	discards_used_this_stop = 0
 	run_flags.clear()
+	run_flags["next_card_number"] = 53
 
 	RngManager.set_seed_from_string(rng_seed_string)
-	emit_signal("run_started", rng_seed_string, album_deck_id)
-	emit_signal("money_changed", money)
-	emit_signal("inventories_changed")
-	emit_signal("piles_changed")
+	run_started.emit(rng_seed_string, album_deck_id)
+	money_changed.emit(money)
+	inventories_changed.emit()
+	piles_changed.emit()
 
 
 func begin_stop(stop_type: String, boss_data: BossData = null) -> void:
@@ -80,7 +88,10 @@ func begin_stop(stop_type: String, boss_data: BossData = null) -> void:
 	target_hype = Config.get_target_hype(current_leg, current_stop_type)
 	current_hype = 0
 	previous_hand_types_this_stop.clear()
-	emit_signal("stop_started", get_stop_snapshot())
+	last_scoring_breakdown.clear()
+	last_result_message = ""
+	discards_used_this_stop = 0
+	stop_started.emit(get_stop_snapshot())
 
 
 func advance_stop_pointer() -> bool:
@@ -99,7 +110,7 @@ func get_next_stop_type() -> String:
 
 func add_money(amount: int) -> void:
 	money = maxi(0, money + amount)
-	emit_signal("money_changed", money)
+	money_changed.emit(money)
 
 
 func spend_money(amount: int) -> bool:
@@ -108,7 +119,7 @@ func spend_money(amount: int) -> bool:
 	if money < amount:
 		return false
 	money -= amount
-	emit_signal("money_changed", money)
+	money_changed.emit(money)
 	return true
 
 
@@ -131,7 +142,7 @@ func add_gear(gear_data: GearData) -> bool:
 	if gear_data == null or not can_add_gear():
 		return false
 	gear_inventory.append(gear_data)
-	emit_signal("inventories_changed")
+	inventories_changed.emit()
 	return true
 
 
@@ -140,7 +151,7 @@ func remove_gear(gear_data: GearData) -> bool:
 	if index == -1:
 		return false
 	gear_inventory.remove_at(index)
-	emit_signal("inventories_changed")
+	inventories_changed.emit()
 	return true
 
 
@@ -148,7 +159,7 @@ func add_consumable(consumable_data: ConsumableData) -> bool:
 	if consumable_data == null or not can_add_consumable():
 		return false
 	consumables.append(consumable_data)
-	emit_signal("inventories_changed")
+	inventories_changed.emit()
 	return true
 
 
@@ -157,8 +168,36 @@ func remove_consumable(consumable_data: ConsumableData) -> bool:
 	if index == -1:
 		return false
 	consumables.remove_at(index)
-	emit_signal("inventories_changed")
+	inventories_changed.emit()
 	return true
+
+
+func clear_selected_cards() -> void:
+	selected_cards.clear()
+	piles_changed.emit()
+
+
+func notify_piles_changed() -> void:
+	piles_changed.emit()
+
+
+func set_last_scoring_breakdown(breakdown: Dictionary) -> void:
+	last_scoring_breakdown = breakdown.duplicate(true)
+	scoring_breakdown_changed.emit(last_scoring_breakdown)
+
+
+func mark_run_won() -> void:
+	run_won.emit()
+
+
+func mark_run_lost(reason: String) -> void:
+	run_lost.emit(reason)
+
+
+func get_next_card_number() -> int:
+	var next_number := int(run_flags.get("next_card_number", 53))
+	run_flags["next_card_number"] = next_number + 1
+	return next_number
 
 
 func get_stop_snapshot() -> Dictionary:
@@ -172,6 +211,7 @@ func get_stop_snapshot() -> Dictionary:
 		"discards_remaining": discards_remaining,
 		"target_hype": target_hype,
 		"current_hype": current_hype,
+		"last_result_message": last_result_message,
 		"boss_id": current_boss.id if current_boss != null else "",
 		"rng_seed_string": rng_seed_string,
 	}
@@ -196,7 +236,10 @@ func get_run_snapshot() -> Dictionary:
 		"discards_remaining": discards_remaining,
 		"target_hype": target_hype,
 		"current_hype": current_hype,
+		"last_result_message": last_result_message,
+		"discards_used_this_stop": discards_used_this_stop,
 		"previous_hand_types_this_stop": previous_hand_types_this_stop.duplicate(),
+		"last_scoring_breakdown": last_scoring_breakdown.duplicate(true),
 		"rng_seed_string": rng_seed_string,
 		"album_deck_id": album_deck_id,
 		"run_flags": run_flags.duplicate(true),
